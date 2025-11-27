@@ -1,0 +1,46 @@
+import React, { useEffect, useState } from "react";
+import { View, Text, FlatList, StyleSheet } from "react-native";
+import { auth, db } from "../firebase/config";
+
+export default function TaskListScreen() {
+  const [tasks, setTasks] = useState([]);
+
+  useEffect(() => {
+    const uid = auth.currentUser.uid;
+    const unsubscribe = db
+      .collection("tareas")
+      .where("userId", "==", uid)
+      .orderBy("fecha")
+      .onSnapshot(snapshot => {
+        const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setTasks(list);
+      });
+
+    return () => unsubscribe();
+  }, []);
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.header}>Mis Tareas</Text>
+      <FlatList
+        data={tasks}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.card}>
+            <Text style={styles.title}>{item.titulo}</Text>
+            <Text>{item.materia}</Text>
+            <Text>Entrega: {item.fecha}</Text>
+            { item.descripcion ? <Text>{item.descripcion}</Text> : null }
+          </View>
+        )}
+        ListEmptyComponent={<Text>No tienes tareas.</Text>}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex:1, padding:20 },
+  header: { fontSize:24, marginBottom:10 },
+  card: { borderWidth:1, padding:15, borderRadius:5, marginBottom:10 }
+});
