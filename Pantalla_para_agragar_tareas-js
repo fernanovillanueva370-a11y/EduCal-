@@ -1,1 +1,54 @@
+import React, { useState } from "react";
+import { View, TextInput, Button, StyleSheet, Text, Alert } from "react-native";
+import { auth, db } from "../firebase/config";
 
+export default function AddTaskScreen({ navigation }) {
+  const [titulo, setTitulo] = useState("");
+  const [materia, setMateria] = useState("");
+  const [fecha, setFecha] = useState("");
+  const [descripcion, setDescripcion] = useState("");
+
+  const handleSave = () => {
+    if (!titulo || !materia || !fecha) {
+      Alert.alert("Error", "Completá título, materia y fecha");
+      return;
+    }
+
+    const uid = auth.currentUser.uid;
+
+    db.collection("tareas").add({
+      userId: uid,
+      titulo,
+      materia,
+      fecha,
+      descripcion: descripcion || "",
+      estado: "pendiente",
+      createdAt: new Date()
+    })
+    .then(() => {
+      navigation.goBack();
+    })
+    .catch(err => {
+      Alert.alert("Error", "No se pudo guardar la tarea: " + err.message);
+    });
+  };
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Nueva Tarea</Text>
+
+      <TextInput style={styles.input} placeholder="Título" value={titulo} onChangeText={setTitulo} />
+      <TextInput style={styles.input} placeholder="Materia" value={materia} onChangeText={setMateria} />
+      <TextInput style={styles.input} placeholder="Fecha (YYYY‑MM‑DD)" value={fecha} onChangeText={setFecha} />
+      <TextInput style={styles.input} placeholder="Descripción (opcional)" value={descripcion} onChangeText={setDescripcion} />
+
+      <Button title="Guardar tarea" onPress={handleSave} />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: { flex:1, padding:20 },
+  title: { fontSize:24, marginBottom:15 },
+  input: { borderWidth:1, marginBottom:10, padding:10, borderRadius:5 }
+});
